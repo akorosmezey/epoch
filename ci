@@ -29,12 +29,8 @@ case "${1:?}"-"${2:?}" in
         ;;
     after_failure-test)
         BuildDir="${3:?}"
-        ls -l "${BuildDir:?}"/_build/dev3/rel/ae_core/log/*
-        for F in "${BuildDir:?}"/_build/dev3/rel/ae_core/log/*; do echo "${F:?}"; cat "${F:?}"; echo; done
-        ls -l "${BuildDir:?}"/_build/dev1/rel/ae_core/log/*
-        for F in "${BuildDir:?}"/_build/dev1/rel/ae_core/log/*; do echo "${F:?}"; cat "${F:?}"; echo; done
-        ls -l "${BuildDir:?}"/_build/dev2/rel/ae_core/log/*
-        for F in "${BuildDir:?}"/_build/dev2/rel/ae_core/log/*; do echo "${F:?}"; cat "${F:?}"; echo; done
+        ls -l "${BuildDir:?}"/_build/test/logs/*
+        for F in "${BuildDir:?}"/_build/test/logs/*; do echo "${F:?}"; cat "${F:?}"; echo; done
         ;;
     after_failure-*)
         true
