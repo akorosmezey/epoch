@@ -23,7 +23,7 @@ conversion_test_() ->
      [{"Base-2 integer logarithm",
        fun() ->
                %% 16^6 = 2^24
-               ?assertEqual(24, ?TEST_MODULE:log2(16#1000000))
+               ?assertEqual(25, ?TEST_MODULE:log2(16#1000000))
        end},
       {"Integer to scientific conversion",
        fun() ->
