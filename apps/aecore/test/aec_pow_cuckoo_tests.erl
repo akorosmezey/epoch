@@ -33,9 +33,9 @@ pow_test_() ->
                 ?assertEqual(ok, element(1, Res)),
 
                 %% verify the beast
-                {ok, Key1, Key2, Soln} = Res,
+                {ok, Soln} = Res,
                 {T2, Res2} = timer:tc(?TEST_MODULE, verify,
-                                      [Key1, Key2, Soln, BigDiff]),
+                                      [<<"wsffgujnjkqhduihsahswgdf">>, 169, Soln, BigDiff]),
                 ?debugFmt("~nVerified in ~p microsecs~n~n", [T2]),
                 ?assertEqual(true, Res2)
         end}
@@ -43,7 +43,7 @@ pow_test_() ->
       {"Generate with a winning nonce but difficulty, shall fail",
        {timeout, 15,
         fun() ->
-                %% succeeds in a single step
+                %% Unlikely to succeed after 2 steps
                 SmallDiff = 256*2 + 1,
                 Res = ?TEST_MODULE:generate(<<"wsffgujnjkqhduihsahswgdf">>, 169,
                                             SmallDiff, 7, 20, 2),

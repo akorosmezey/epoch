@@ -11,14 +11,13 @@
 #include <string.h>
 #include <erl_nif.h>
 #include "cuckoo_base.h"
-#include "aec_pow_cuckoo.hpp"
 
 // arbitrary length of header hashed into siphash key
 #define HEADERLEN 80
 
 
-extern pow_cuckoo_result* generate(char* header, int nonce, int ntrims, int nthreads);
-extern int verify(uint64_t key0, uint64_t key1, node_t soln[PROOFSIZE]);
+extern node_t* generate(char* header, int nonce, int ntrims, int nthreads);
+extern int verify(char* header, int nonce, node_t soln[PROOFSIZE]);
 
 int read_solution(ErlNifEnv* env, const ERL_NIF_TERM e_soln, node_t soln[PROOFSIZE]);
 int get_uint64(ErlNifEnv* env, const ERL_NIF_TERM from, uint64_t* to);
@@ -41,18 +40,16 @@ static ERL_NIF_TERM generate_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
       !enif_get_int(env, argv[3], &nthreads))
     return enif_make_badarg(env);
 
-  pow_cuckoo_result* result = generate(header, nonce, ntrims, nthreads);
+  node_t* result = generate(header, nonce, ntrims, nthreads);
 
   if (result) {
     // success: encode result
-    ERL_NIF_TERM e_key1 = enif_make_uint64(env, result->key1);
-    ERL_NIF_TERM e_key2 = enif_make_uint64(env, result->key2);
     ERL_NIF_TERM arr[PROOFSIZE];
     for (int i2 = 0; i2 < PROOFSIZE; i2++) {
 #if EDGEBITS > 31
-      arr[i2] = enif_make_uint64(env, result->soln[i2]);
+      arr[i2] = enif_make_uint64(env, result[i2]);
 #else
-      arr[i2] = enif_make_uint(env, result->soln[i2]);
+      arr[i2] = enif_make_uint(env, result[i2]);
 #endif
     }
     ERL_NIF_TERM e_soln = enif_make_list_from_array(env, arr, PROOFSIZE);
@@ -60,7 +57,7 @@ static ERL_NIF_TERM generate_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
     delete[] result;
 
     // solution found: return {ok, Key1, Key2, Solution}
-    return enif_make_tuple4(env, enif_make_atom(env, "ok"), e_key1, e_key2, e_soln);
+    return enif_make_tuple2(env, enif_make_atom(env, "ok"), e_soln);
   } else {
     // failed to find solution, return {error, no_solutions}
     ERL_NIF_TERM failure = enif_make_tuple2(env,
@@ -71,16 +68,17 @@ static ERL_NIF_TERM generate_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM ar
 }
 
 static ERL_NIF_TERM verify_nif(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv[]) {
-  uint64_t key0, key1;
+  int nonce;
+  char header[HEADERLEN];
   node_t soln[PROOFSIZE];
 
   if (argc != 3 ||
-      !get_uint64(env, argv[0], &key0) ||
-      !get_uint64(env, argv[1], &key1) ||
+      enif_get_string(env, argv[0], header, HEADERLEN, ERL_NIF_LATIN1) <= 0 ||
+      !enif_get_int(env, argv[1], &nonce) ||
       !read_solution(env, argv[2], soln))
     return enif_make_badarg(env);
 
-  int result = verify(key0, key1, soln);
+  int result = verify(header, nonce, soln);
 
   if (result != 0)
     return enif_make_atom(env, "true");

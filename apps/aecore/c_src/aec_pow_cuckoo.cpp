@@ -11,7 +11,6 @@
 #include <string.h>
 #include "siphash.h"
 #include "cuckoo_miner.hpp"
-#include "aec_pow_cuckoo.hpp"
 
 
 #define MAXSOLS 1
@@ -19,7 +18,7 @@
 #define HEADERLEN 80
 
 
-pow_cuckoo_result* generate(char* header, int nonce, int ntrims, int nthreads) {
+node_t* generate(char* header, int nonce, int ntrims, int nthreads) {
   printf("Looking for %d-cycle on cuckoo%d(\"%s\",%d) with 50%% edges, %d trims, %d threads\n",
          PROOFSIZE, EDGEBITS + 1, header, nonce, ntrims, nthreads);
 
@@ -77,34 +76,38 @@ pow_cuckoo_result* generate(char* header, int nonce, int ntrims, int nthreads) {
 
     free(threads);
     // Return the 1st solution as result, dropping possible others
-    pow_cuckoo_result* result = new pow_cuckoo_result(ctx.sip_keys.k0,
-                                                      ctx.sip_keys.k1,
-                                                      ctx.sols[0]);
+    node_t* result = new node_t[PROOFSIZE];
+    for (int i = 0; i < PROOFSIZE; i++)
+      result[i] = ctx.sols[0][i];
     return result;
   }
 }
 
-int verify(u64 key0, u64 key1, node_t soln[PROOFSIZE]) {
-  siphash_keys keys = {key0, key1};
-    edge_t nonces[PROOFSIZE];
-    for (int i = 0; i < PROOFSIZE; i++) {
-      nonces[i] = soln[i];
-    }
+int verify(char* header, int nonce, node_t soln[PROOFSIZE]) {
+  // Initiate a context using header and nonce, we just need the keys
+  cuckoo_ctx ctx(1, 1, 1);
+  ctx.setheadernonce(header, sizeof(header), nonce);
+  printf("k0 %llx k1 %llx\n", ctx.sip_keys.k0, ctx.sip_keys.k1);
 
-    int pow_rc = verify(nonces, &keys);
+  edge_t nonces[PROOFSIZE];
+  for (int i = 0; i < PROOFSIZE; i++) {
+    nonces[i] = soln[i];
+  }
 
-    if (pow_rc == POW_OK) {
-      printf("Verified with cyclehash ");
-      unsigned char cyclehash[32];
-      blake2b((void *)cyclehash, sizeof(cyclehash), (const void *)nonces, sizeof(nonces), 0, 0);
-      for (int i=0; i<32; i++)
-        printf("%02x", cyclehash[i]);
-      printf("\n");
+  int pow_rc = verify(nonces, &ctx.sip_keys);
 
-      return true;
-    } else {
-      printf("FAILED due to %s\n", errstr[pow_rc]);
+  if (pow_rc == POW_OK) {
+    printf("Verified with cyclehash ");
+    unsigned char cyclehash[32];
+    blake2b((void *)cyclehash, sizeof(cyclehash), (const void *)nonces, sizeof(nonces), 0, 0);
+    for (int i=0; i<32; i++)
+      printf("%02x", cyclehash[i]);
+    printf("\n");
+
+    return true;
+  } else {
+    printf("FAILED due to %s\n", errstr[pow_rc]);
 
       return false;
-    }
+  }
 }

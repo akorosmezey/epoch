@@ -20,8 +20,7 @@
 -on_load(init/0).
 
 -type pow_cuckoo_solution() :: [integer()].
--type pow_cuckoo_result() :: {'ok', Key1 :: integer(), Key2 :: integer(),
-                              Soln :: pow_cuckoo_solution()} | {'error', atom()}.
+-type pow_cuckoo_result() :: {'ok', Soln :: pow_cuckoo_solution()} | {'error', atom()}.
 
 -export_type([pow_cuckoo_result/0,
               pow_cuckoo_solution/0]).
@@ -42,22 +41,23 @@ init() ->
 %% Proof of Work generation, multiple attempts
 %%------------------------------------------------------------------------------
 -spec generate(Data :: binary(), Nonce :: integer(), Difficulty :: aec_sha256:sci_int(),
-               Trims :: integer(), Threads :: integer(), Retries :: integer()) -> 
+               Trims :: integer(), Threads :: integer(), Retries :: integer()) ->
                       pow_cuckoo_result().
 generate(Data, Nonce, Difficulty, Trims, Threads, Retries) ->
-    Header = base64:encode_to_string(aec_sha256:hash(Data)),
-    generate_hashed(Header, Nonce, Difficulty, Trims, Threads, Retries).
+    Hash = base64:encode_to_string(aec_sha256:hash(Data)),
+    generate_hashed(Hash, Nonce, Difficulty, Trims, Threads, Retries).
 
 %%------------------------------------------------------------------------------
 %% Proof of Work verification (with difficulty check)
 %%------------------------------------------------------------------------------
--spec verify(Key1 :: integer(), Key2 :: integer(),
+-spec verify(Data :: binary(), Nonce :: integer(),
              Soln :: pow_cuckoo_solution(), Difficulty :: aec_sha256:sci_int()) ->
                     boolean().
-verify(Key1, Key2, Soln, Difficulty) ->
+verify(Data, Nonce, Soln, Difficulty) ->
+    Hash = base64:encode_to_string(aec_sha256:hash(Data)),
     case test_difficulty(Soln, Difficulty) of
         true ->
-            verify(Key1, Key2, Soln);
+            verify(Hash, Nonce, Soln);
         false ->
             false
     end.
@@ -85,7 +85,7 @@ generate_hashed(Hash, Nonce, Difficulty, Trims, Threads, Retries) when Retries >
     case generate(Hash, Nonce, Trims, Threads) of
         {error, no_solutions} ->
             generate_hashed(Hash, Nonce + 1, Difficulty, Trims, Threads, Retries - 1);
-        {ok, _Key1, _Key2, Soln} = Result ->
+        {ok, Soln} = Result ->
             case test_difficulty(Soln, Difficulty) of
                 true ->
                     Result;
@@ -105,9 +105,9 @@ generate(_Header, _Nonce, _Trims, _Threads) ->
 %%------------------------------------------------------------------------------
 %% Proof of Work verification (without difficulty check)
 %%------------------------------------------------------------------------------
--spec verify(Key1 :: integer(), Key2 :: integer(),
+-spec verify(Hash :: string(), Nonce :: integer(),
              Soln :: pow_cuckoo_solution()) -> boolean().
-verify(_Key1, _Key2, _Soln) ->
+verify(_Hash, _Nonce, _Soln) ->
     exit(nif_library_not_loaded).
 
 %%------------------------------------------------------------------------------

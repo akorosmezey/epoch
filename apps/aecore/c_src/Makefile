@@ -91,6 +91,7 @@ link_verbose = $(link_verbose_$(V))
 
 #SOURCES := $(shell find $(C_SRC_DIR) -maxdepth 1 -type f \( -name "*.cpp" -o -name "*.C" -o -name "*.cc" -o -name "*.cpp" \))
 OBJECTS = aec_pow_cuckoo.o aec_pow_cuckoo_nif.o
+CUCKOO_SRCS = $(LIBDIR)/src/blake2b-ref.c
 CUCKOO_OBJECTS = $(LIBDIR)/src/blake2b-ref.o
 
 COMPILE_C = $(c_verbose) $(CC) $(CFLAGS) $(CPPFLAGS) -c
@@ -103,7 +104,7 @@ all: $(LIB_SO) ## Build all
 
 $(LIB_SO): $(OBJECTS) $(CUCKOO_OBJECTS)
 	@mkdir -p $(BASEDIR)/priv/
-	$(link_verbose) $(CC) -o $(LIB_SO) $(LDLIBS)  $(LDFLAGS) $?
+	$(link_verbose) $(CC) -o $(LIB_SO) $(LDLIBS)  $(LDFLAGS) $^
 
 %.o: %.c
 	$(COMPILE_C) $(OUTPUT_OPTION) $<
@@ -116,8 +117,9 @@ deps: $(LIBDIR)
 $(LIBDIR):
 	git clone https://github.com/tromp/cuckoo.git
 
-deps_build: deps
-	cd $(LIBDIR)/src; make
+$(CUCKOO_SRCS): deps
+
+$(CUCKOO_OBJECTS): deps $(CUCKOO_SRCS)
 
 clean: ## Clean all files
 	@rm -f $(OBJECTS) $(C_TEST) $(LIB_SO)
