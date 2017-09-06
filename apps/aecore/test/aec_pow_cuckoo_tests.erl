@@ -22,7 +22,7 @@ pow_test_() ->
                             ?TEST_MODULE:generate(<<"hello there">>, 5555, 0, 7, 7, 0))
        end},
       {"Generate with a winning nonce and big difficulty, verify it",
-       {timeout, 10,
+       {timeout, 20,
         fun() ->
                 %% succeeds in a single step
                 BigDiff = 256*256 + 255 + 1,
@@ -41,7 +41,7 @@ pow_test_() ->
         end}
       },
       {"Generate with a winning nonce but difficulty, shall fail",
-       {timeout, 15,
+       {timeout, 30,
         fun() ->
                 %% Unlikely to succeed after 2 steps
                 SmallDiff = 256*2 + 1,
