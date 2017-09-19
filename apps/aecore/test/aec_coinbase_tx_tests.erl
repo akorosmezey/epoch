@@ -28,7 +28,6 @@ create_coinbase_tx_existing_account_test() ->
 
 create_coinbase_tx_no_account_test() ->
     PubKey = <<"my_pubkey">>,
-    Account0 = #account{pubkey = PubKey},
     Trees0 = create_state_tree(),
 
     {ok, CoinbaseTx} = aec_coinbase_tx:new(#{account => PubKey}, Trees0),
