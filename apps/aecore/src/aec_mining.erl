@@ -10,6 +10,8 @@
 -include("txs.hrl").
 
 
+-include_lib("eunit/include/eunit.hrl").
+
 %% Cuckoo Cycle has a solution probability of 2.2% so we are
 %% likely to succeed in 100 steps (~90%).
 -define(DEFAULT_MINE_ATTEMPTS_COUNT, 100).
@@ -23,19 +25,25 @@ mine() ->
 -spec mine(non_neg_integer()) -> {ok, block()} | {error, term()}.
 mine(Attempts) ->
     {ok, LastBlock} = aec_chain:top(),
+    ?debugFmt("Last block ~p~n", [LastBlock]),
     Trees = aec_blocks:trees(LastBlock),
     Txs = get_txs_to_mine(Trees),
+    ?debugFmt("Txs to mine: ~p~n", [Txs]),
     case aec_blocks:new(LastBlock, Txs, Trees) of
         {ok, Block0} ->
+            ?debugFmt("Got block ~p~n", [Block0]),
             Block = maybe_recalculate_difficulty(Block0),
 
             case mine(Block, Attempts) of
                 {ok, _Block} = Ok ->
+                    ?debugFmt("Mined block ~p~n", [Block]),
                     Ok;
                 {error, _Reason} = Error ->
+                    ?debugFmt("Failed to mine block: ~p~n", [Error]),
                     Error
             end;
         {error, _Reason} = Error ->
+            ?debugFmt("Failed to get block: ~p~n", [Error]),
             Error
     end.
 

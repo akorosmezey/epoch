@@ -73,12 +73,56 @@ create_coinbase_tx_no_account_test() ->
                                     aec_accounts:get(PubKey, AccountsTrees))
                end}
       end,
-      fun({PubKey, Trees0, CoinbaseTx}) ->
+      fun({_PubKey, Trees0, CoinbaseTx}) ->
               {"Process coinbase trx without existing account in state: shall fail",
                ?assertEqual({error, account_not_found}, aec_coinbase_tx:process(CoinbaseTx, Trees0, 9))}
       end
      ]
     }.
+
+
+mine_from_genesis_test_() ->
+    {foreach,
+     fun() ->
+             application:start(crypto),
+             meck:new(aec_chain, [passthrough]),
+             meck:expect(aec_chain, top,
+                         fun() ->
+                                 {ok, T} = meck:passthrough([]),
+                                 case aec_trees:accounts(T#block.trees) of
+                                     undefined ->
+                                         {ok, AccountsTree} = aec_accounts:empty(),
+                                         Trees0 = T#block.trees,
+                                         Trees = aec_trees:set_accounts(Trees0, AccountsTree),
+                                         {ok, T#block{trees = Trees}};
+                                     A ->
+                                         {ok, T}
+                                 end
+                         end),
+             BGenesis = aec_genesis:genesis_block(),
+             StateTree = create_state_tree(),
+             ?debugFmt("Setting state tree: ~p~n", [StateTree]),
+             aec_chain:start_link(BGenesis#block{trees = StateTree}),
+             ?debugFmt("Top block: ~p~n", [aec_chain:top_block()]),
+             Pwd = <<"mypassword">>,
+             aec_keys:start_link([".", Pwd]),
+             {PubKey, PrivKey} = crypto:generate_key(ecdh, secp256k1),
+             %%aec_keys:open(Pwd),
+             aec_keys:set(Pwd, PrivKey, PubKey)
+     end,
+     fun(_) ->
+             application:stop(crypto),
+             meck:unload(aec_chain)
+     end,
+     [
+      {"Mining with (almost) all the bells and whistles",
+       fun() ->
+               {ok, Block} = aec_mining:mine(),
+
+               ?assertEqual(1, Block#block.height),
+               ?assertEqual(1, length(Block#block.txs))
+       end}
+     ]}.
 
 
 %%%=============================================================================

@@ -32,10 +32,10 @@ apply_signed([SignedTx | Rest], Trees0, Height) ->
         ok ->
             Tx = aec_tx_sign:data(SignedTx),
             case check_single(Tx, Trees0, Height) of
-                {ok, Trees} ->
-                    case process_single(Tx, Trees0, Height) of
-                        {ok, Trees} ->
-                            apply_signed(Rest, Trees, Height);
+                {ok, Trees1} ->
+                    case process_single(Tx, Trees1, Height) of
+                        {ok, Trees2} ->
+                            apply_signed(Rest, Trees2, Height);
                         {error, _Reason} = Error ->
                             Error
                     end;
@@ -54,7 +54,7 @@ apply_signed([SignedTx | Rest], Trees0, Height) ->
 %%------------------------------------------------------------------------------
 %% Check transaction. Prepare state tree: e.g., create newly referenced account
 %%------------------------------------------------------------------------------
--spec check_single(coinbase_tx(), trees(), non_neg_integer()) -> {ok, trees()} | {error, term()}.
+-spec check_single(tx(), trees(), non_neg_integer()) -> {ok, trees()} | {error, term()}.
 check_single(#coinbase_tx{} = Tx, Trees, Height) ->
     aec_coinbase_tx:check(Tx, Trees, Height);
 check_single(_Other, _Trees_, _Height) ->
@@ -63,7 +63,7 @@ check_single(_Other, _Trees_, _Height) ->
 %%------------------------------------------------------------------------------
 %% Process the transaction. Accounts must already be present in the state tree
 %%------------------------------------------------------------------------------
--spec process_single(coinbase_tx(), trees(), non_neg_integer()) -> {ok, trees()} | {error, term()}.
+-spec process_single(tx(), trees(), non_neg_integer()) -> {ok, trees()} | {error, term()}.
 process_single(#coinbase_tx{} = Tx, Trees, Height) ->
     aec_coinbase_tx:process(Tx, Trees, Height);
 process_single(_Other, _Trees_, _Height) ->
