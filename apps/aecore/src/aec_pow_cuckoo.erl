@@ -220,6 +220,9 @@ wait_for_result(#state{os_pid = OsPid,
                       end,
             ?error("OS process died: ~p~n", [Reason2]),
             {error, {execution_failed, Reason2}};
+        stop_mining ->
+            ok = exec:stop(OsPid),
+            {error, mining_stopped_by_user};
         _Other ->
             wait_for_result(State)
     end.

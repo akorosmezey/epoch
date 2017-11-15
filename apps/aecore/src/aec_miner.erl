@@ -466,6 +466,14 @@ waiting_for_keys(_Type, _Msg, State) ->
 %% @spec terminate(Reason, StateName, State) -> void()
 %% @end
 %%--------------------------------------------------------------------
+terminate(_Reason, running, #state{miner = Miner}) ->
+    case Miner of
+        none ->
+            ok;
+        Pid ->
+            Pid ! stop_mining,
+            ok
+    end;
 terminate(_Reason, _StateName, _State) ->
     ok.
 
