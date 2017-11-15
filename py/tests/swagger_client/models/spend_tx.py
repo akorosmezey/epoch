@@ -31,32 +31,58 @@ class SpendTx(object):
                             and the value is json key in definition.
     """
     swagger_types = {
+        'sender_pubkey': 'str',
         'recipient_pubkey': 'str',
         'amount': 'int',
         'fee': 'int'
     }
 
     attribute_map = {
+        'sender_pubkey': 'sender_pubkey',
         'recipient_pubkey': 'recipient_pubkey',
         'amount': 'amount',
         'fee': 'fee'
     }
 
-    def __init__(self, recipient_pubkey=None, amount=None, fee=None):
+    def __init__(self, sender_pubkey=None, recipient_pubkey=None, amount=None, fee=None):
         """
         SpendTx - a model defined in Swagger
         """
 
+        self._sender_pubkey = None
         self._recipient_pubkey = None
         self._amount = None
         self._fee = None
 
+        if sender_pubkey is not None:
+          self.sender_pubkey = sender_pubkey
         if recipient_pubkey is not None:
           self.recipient_pubkey = recipient_pubkey
         if amount is not None:
           self.amount = amount
         if fee is not None:
           self.fee = fee
+
+    @property
+    def sender_pubkey(self):
+        """
+        Gets the sender_pubkey of this SpendTx.
+
+        :return: The sender_pubkey of this SpendTx.
+        :rtype: str
+        """
+        return self._sender_pubkey
+
+    @sender_pubkey.setter
+    def sender_pubkey(self, sender_pubkey):
+        """
+        Sets the sender_pubkey of this SpendTx.
+
+        :param sender_pubkey: The sender_pubkey of this SpendTx.
+        :type: str
+        """
+
+        self._sender_pubkey = sender_pubkey
 
     @property
     def recipient_pubkey(self):
